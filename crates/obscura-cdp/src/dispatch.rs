@@ -52,6 +52,7 @@ impl CdpContext {
             proxy,
             stealth,
             user_agent,
+            false,
         ));
         CdpContext {
             pages: Vec::new(),

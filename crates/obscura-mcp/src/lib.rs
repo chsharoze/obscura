@@ -53,10 +53,10 @@ pub struct BrowserState {
 }
 
 impl BrowserState {
-    pub fn new(proxy: Option<String>, user_agent: Option<String>, stealth: bool) -> Self {
+    pub fn new(proxy: Option<String>, user_agent: Option<String>, stealth: bool, ignore_tls_errors: bool) -> Self {
         BrowserState {
             page: None,
-            context: Arc::new(BrowserContext::with_options("mcp".to_string(), proxy, stealth)),
+            context: Arc::new(BrowserContext::with_full_options("mcp".to_string(), proxy, stealth, None, ignore_tls_errors)),
             user_agent,
             console_messages: Vec::new(),
         }
@@ -82,13 +82,13 @@ pub async fn dispatch(method: &str, id: Value, params: &Value, state: &mut Brows
     }
 }
 
-pub async fn run(proxy: Option<String>, user_agent: Option<String>, stealth: bool) -> Result<()> {
+pub async fn run(proxy: Option<String>, user_agent: Option<String>, stealth: bool, ignore_tls_errors: bool) -> Result<()> {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
     let mut reader = BufReader::new(stdin);
     let mut writer = stdout;
 
-    let mut state = BrowserState::new(proxy, user_agent, stealth);
+    let mut state = BrowserState::new(proxy, user_agent, stealth, ignore_tls_errors);
 
     loop {
         // MCP stdio transport: newline-delimited JSON (one message per line)

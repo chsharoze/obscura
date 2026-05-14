@@ -165,6 +165,7 @@ pub struct ObscuraHttpClient {
     pub timeout: Duration,
     pub in_flight: Arc<std::sync::atomic::AtomicU32>,
     pub block_trackers: bool,
+    pub ignore_tls_errors: bool,
 }
 
 impl ObscuraHttpClient {
@@ -173,10 +174,10 @@ impl ObscuraHttpClient {
     }
 
     pub fn with_cookie_jar(cookie_jar: Arc<CookieJar>) -> Self {
-        Self::with_options(cookie_jar, None)
+        Self::with_options(cookie_jar, None, false)
     }
 
-    pub fn with_options(cookie_jar: Arc<CookieJar>, proxy_url: Option<&str>) -> Self {
+    pub fn with_options(cookie_jar: Arc<CookieJar>, proxy_url: Option<&str>, ignore_tls_errors: bool) -> Self {
         ObscuraHttpClient {
             client: tokio::sync::OnceCell::new(),
             proxy_url: proxy_url.map(|s| s.to_string()),
@@ -191,6 +192,7 @@ impl ObscuraHttpClient {
             in_flight: Arc::new(std::sync::atomic::AtomicU32::new(0)),
             timeout: Duration::from_secs(30),
             block_trackers: false,
+            ignore_tls_errors,
         }
     }
 
@@ -199,7 +201,7 @@ impl ObscuraHttpClient {
             let mut builder = Client::builder()
                 .redirect(Policy::none())
                 .timeout(Duration::from_secs(30))
-                .danger_accept_invalid_certs(false)
+                .danger_accept_invalid_certs(self.ignore_tls_errors)
 ;
 
             if let Some(ref proxy) = self.proxy_url {
