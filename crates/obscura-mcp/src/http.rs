@@ -166,7 +166,7 @@ async fn process_one(msg: &Value, state: &mut BrowserState) -> Option<Value> {
     let method = msg.get("method").and_then(Value::as_str).unwrap_or("");
     let params = msg.get("params").unwrap_or(&Value::Null);
     let resp = dispatch(method, id, params, state).await;
-    Some(serde_json::to_value(resp).unwrap())
+    Some(serde_json::to_value(resp).unwrap_or_else(|_| serde_json::json!({"jsonrpc":"2.0","id":msg.get("id").unwrap_or(&serde_json::Value::Null),"error":{"code":-32603,"message":"Internal error serializing response"}})))
 }
 
 async fn respond_json(writer: &mut (impl AsyncWriteExt + Unpin), body: &[u8]) -> Result<()> {

@@ -31,6 +31,7 @@ impl parser::SelectorImpl for ObscuraSelector {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Default)]
 pub struct CssString(pub String);
 
 impl<'a> From<&'a str> for CssString {
@@ -61,11 +62,6 @@ impl PrecomputedHash for CssString {
     }
 }
 
-impl Default for CssString {
-    fn default() -> Self {
-        CssString(String::new())
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CssLocalName(pub LocalName);

@@ -292,11 +292,9 @@ impl Page {
         let fetch_results = futures::future::join_all(fetch_futures).await;
 
         let mut fetched: std::collections::HashMap<usize, (String, String, obscura_net::Response)> = std::collections::HashMap::new();
-        for result in fetch_results {
-            if let Some((idx, url, resp)) = result {
-                let code = String::from_utf8_lossy(&resp.body).to_string();
-                fetched.insert(idx, (url, code, resp));
-            }
+        for (idx, url, resp) in fetch_results.into_iter().flatten() {
+            let code = String::from_utf8_lossy(&resp.body).to_string();
+            fetched.insert(idx, (url, code, resp));
         }
 
         for (i, script) in all_to_execute.iter().enumerate() {
@@ -440,6 +438,7 @@ impl Page {
         self.lifecycle = LifecycleState::Loading;
         self.url = Some(url.clone());
         self.network_events.clear();
+        self.js = None; // Ensure old V8 context is dropped and memory is freed
 
         if self.context.obey_robots {
             if let Some(domain) = url.host_str() {
@@ -549,12 +548,10 @@ impl Page {
 
         let css_results = futures::future::join_all(css_futures).await;
         let mut css_sources = Vec::new();
-        for result in css_results {
-            if let Some((url_str, resp)) = result {
-                let css = String::from_utf8_lossy(&resp.body).to_string();
-                self.record_network_event(&url_str, "GET", "Stylesheet", resp.status, &resp.headers, resp.body.len());
-                css_sources.push(css);
-            }
+        for (url_str, resp) in css_results.into_iter().flatten() {
+            let css = String::from_utf8_lossy(&resp.body).to_string();
+            self.record_network_event(&url_str, "GET", "Stylesheet", resp.status, &resp.headers, resp.body.len());
+            css_sources.push(css);
         }
 
         self.dom = Some(dom);
@@ -657,6 +654,18 @@ impl Page {
             .as_ref()
             .map(|u| u.to_string())
             .unwrap_or_else(|| "about:blank".to_string())
+    }
+
+    pub fn console_messages(&self) -> Vec<String> {
+        if let Some(js) = &self.js {
+            let state = js.get_state();
+            let mut s = state.borrow_mut();
+            let msgs = s.console_messages.clone();
+            s.console_messages.clear();
+            msgs
+        } else {
+            Vec::new()
+        }
     }
 
     pub fn with_dom<R>(&self, f: impl FnOnce(&DomTree) -> R) -> Option<R> {

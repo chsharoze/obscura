@@ -32,6 +32,10 @@ impl ObscuraJsRuntime {
         Self::with_base_url("about:blank")
     }
 
+    pub fn get_state(&self) -> Rc<RefCell<ObscuraState>> {
+        self.state.clone()
+    }
+
     pub fn with_base_url(base_url: &str) -> Self {
         let state = Rc::new(RefCell::new(ObscuraState::new()));
         let state_clone = state.clone();
