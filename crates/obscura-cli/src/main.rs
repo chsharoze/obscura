@@ -123,6 +123,9 @@ enum Command {
 
         #[arg(long)]
         stealth: bool,
+
+        #[arg(long)]
+        ignore_tls_errors: bool,
     },
 
 }
@@ -219,11 +222,11 @@ async fn main() -> anyhow::Result<()> {
         Some(Command::Scrape { urls, eval, concurrency, format, timeout, quiet }) => {
             run_parallel_scrape(urls, eval, concurrency.get(), &format, timeout, quiet, global_proxy).await?;
         }
-        Some(Command::Mcp { http, port, proxy, user_agent, stealth }) => {
+        Some(Command::Mcp { http, port, proxy, user_agent, stealth, ignore_tls_errors }) => {
             if http {
-                obscura_mcp::http::run(port, proxy, user_agent, stealth).await?;
+                obscura_mcp::http::run(port, proxy, user_agent, stealth, ignore_tls_errors).await?;
             } else {
-                obscura_mcp::run(proxy, user_agent, stealth).await?;
+                obscura_mcp::run(proxy, user_agent, stealth, ignore_tls_errors).await?;
             }
         }
         None => {

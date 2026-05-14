@@ -30,7 +30,7 @@ impl BrowserContext {
     }
 
     pub fn with_options(id: String, proxy_url: Option<String>, stealth: bool) -> Self {
-        Self::with_full_options(id, proxy_url, stealth, None)
+        Self::with_full_options(id, proxy_url, stealth, None, false)
     }
 
     pub fn with_full_options(
@@ -38,11 +38,13 @@ impl BrowserContext {
         proxy_url: Option<String>,
         stealth: bool,
         user_agent: Option<String>,
+        ignore_tls_errors: bool,
     ) -> Self {
         let cookie_jar = Arc::new(CookieJar::new());
         let mut client = ObscuraHttpClient::with_options(
             cookie_jar.clone(),
             proxy_url.as_deref(),
+            ignore_tls_errors,
         );
         if stealth {
             client.block_trackers = true;
@@ -85,6 +87,7 @@ mod tests {
             None,
             false,
             Some("Custom-UA/1.0".to_string()),
+            false,
         );
         assert_eq!(ctx.user_agent, "Custom-UA/1.0");
         let client_ua = ctx.http_client.user_agent.read().await.clone();
@@ -98,6 +101,7 @@ mod tests {
             None,
             false,
             None,
+            false,
         );
         assert!(ctx.user_agent.contains("Chrome"));
         let client_ua = ctx.http_client.user_agent.read().await.clone();
