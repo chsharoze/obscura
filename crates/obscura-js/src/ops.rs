@@ -49,6 +49,13 @@ pub struct ObscuraState {
     pub intercept_tx: Option<tokio::sync::mpsc::UnboundedSender<InterceptedRequest>>,
     pub intercept_counter: u64,
     pub intercept_enabled: bool,
+    pub console_messages: Vec<String>,
+}
+
+impl Default for ObscuraState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ObscuraState {
@@ -64,6 +71,7 @@ impl ObscuraState {
             intercept_tx: None,
             intercept_counter: 0,
             intercept_enabled: false,
+            console_messages: Vec::new(),
         }
     }
 }
@@ -273,11 +281,17 @@ fn op_dom(state: &OpState, #[string] cmd: String, #[string] arg1: String, #[stri
 
 #[op2(fast)]
 fn op_console_msg(state: &OpState, #[string] level: &str, #[string] msg: &str) {
-    let _ = state;
     match level {
         "warn" => tracing::warn!(target: "obscura::console", "{}", msg),
         "error" => tracing::error!(target: "obscura::console", "{}", msg),
         _ => tracing::info!(target: "obscura::console", "{}", msg),
+    }
+    if let Some(state) = state.try_borrow::<SharedState>() {
+        let mut s = state.borrow_mut();
+        // The task requested the source URL and line number where available.
+        // We might not have it in the op without stack inspection, but we can prepend the current URL.
+        let url = s.url.clone();
+        s.console_messages.push(format!("[{}] {}: {}", url, level, msg));
     }
 }
 

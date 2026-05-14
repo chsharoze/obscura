@@ -163,8 +163,8 @@ pub async fn handle(
         }
         "addBinding" => {
             let name = params.get("name").and_then(|v| v.as_str()).unwrap_or("");
-            if !name.is_empty() {
-                if name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$')
+            if !name.is_empty()
+                && name.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '$')
                     && !name.chars().next().unwrap_or('0').is_ascii_digit() {
                     if let Some(page) = ctx.get_session_page_mut(session_id) {
                         let code = format!(
@@ -176,7 +176,6 @@ pub async fn handle(
                         page.evaluate(&code);
                     }
                 }
-            }
             Ok(json!({}))
         }
         "runIfWaitingForDebugger" => Ok(json!({})),
